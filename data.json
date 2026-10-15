@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "data": [
+    { "place": 1, "id": "PILOT_001", "score": 150 },
+    { "place": 2, "id": "PILOT_002", "score": 140 },
+    { "place": 3, "id": "PILOT_003", "score": 130 },
+    { "place": 4, "id": "PILOT_004", "score": 120 },
+    { "place": 5, "id": "PILOT_005", "score": 110 },
+    { "place": 6, "id": "PILOT_006", "score": 100 },
+    { "place": 7, "id": "PILOT_007", "score": 90 },
+    { "place": 8, "id": "PILOT_008", "score": 80 },
+    { "place": 9, "id": "PILOT_009", "score": 70 },
+    { "place": 10, "id": "PILOT_010", "score": 60 }
+  ]
+}
