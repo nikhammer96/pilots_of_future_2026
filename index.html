@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Пилоты будущего · Движение первых</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="data.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Rajdhani', sans-serif; background-color: #050505; color: #e2e8f0; min-height: 100vh; overflow-x: hidden; }
@@ -114,10 +113,10 @@
             <div class="glass p-6 mb-8 flex items-center justify-between flex-wrap gap-4">
                 <div>
                     <h3 class="text-xl font-semibold uppercase tracking-wider">Источник данных</h3>
-                    <p class="text-slate-400 text-sm font-mono">Текущий: <span id="currentSourceText" class="font-bold text-cyan-400">Локально</span></p>
+                    <p class="text-slate-400 text-sm font-mono">Текущий: <span id="currentSourceText" class="font-bold text-cyan-400">Firebase DB</span></p>
                 </div>
                 <div class="flex items-center gap-4">
-                    <span class="text-sm uppercase font-semibold">Локально</span>
+                    <span class="text-sm uppercase font-semibold">Firebase DB</span>
                     <label class="switch">
                         <input type="checkbox" id="sourceToggle">
                         <span class="slider"></span>
@@ -142,19 +141,17 @@
                     </table>
                 </div>
                 <button id="addRowBtn" class="bg-green-600/20 border border-green-600 text-green-400 hover:bg-green-600 hover:text-black px-4 py-2 mb-4 transition uppercase font-semibold tracking-wider">+ Добавить</button>
-                <button id="saveTableBtn" class="bg-cyan-500/20 border border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-black px-6 py-3 w-full transition uppercase font-bold tracking-[0.2em]">Сохранить изменения</button>
+                <button id="saveTableBtn" class="bg-cyan-500/20 border border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-black px-6 py-3 w-full transition uppercase font-bold tracking-[0.2em]">Сохранить в облако</button>
                 <p id="saveStatus" class="text-sm mt-2 text-center hidden font-mono"></p>
             </div>
         </div>
     </div>
 
     <script>
-        // --- НАСТРОЙКИ GitHub API ---
-        // ВНИМАНИЕ: Проверьте правильность этих трех переменных!
-        const GH_TOKEN = "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";
-        const GH_OWNER = "nikhammer96"; // Без пробелов, точно как в URL репозитория
-        const GH_REPO = "pilots_of_future_2026"; // Без пробелов, точно как в URL репозитория
-        const GH_PATH = "data.js";
+        // --- НАСТРОЙКИ FIREBASE ---
+        // Вставьте URL вашей базы данных (взятый из консоли Firebase)
+        // Пример: https://my-project-123.firebaseio.com/leaderboard.json
+        const FIREBASE_URL = "https://pilots-of-future2026-default-rtdb.asia-southeast1.firebasedatabase.app/leaderboard.json";
 
         const ENCRYPTED_PASS = "RHBS" + "dHUy" + "MDI2" + "Iw==";
         const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1j7yzaNAlo82pU2l5eoCJQ_1U7Dss9h1t/export?format=csv&gid=0";
@@ -169,55 +166,28 @@
         let isGoogleSource = false;
         sourceToggle.checked = isGoogleSource;
         let localData = [];
-        let fileSha = null; 
-
-        // 100% надежная функция кодирования любых символов (включая кириллицу) в Base64
-        function utf8_to_b64(str) {
-            return btoa(unescape(encodeURIComponent(str)));
-        }
 
         function safeBtoa(str) {
-            try {
-                return utf8_to_b64(str);
-            } catch (e) {
-                console.error("Ошибка кодирования:", e);
-                return null;
-            }
+            try { return btoa(unescape(encodeURIComponent(str))); } 
+            catch (e) { return null; }
         }
 
-        // Инициализация данных
+        // Инициализация данных: загрузка из Firebase
         async function initData() {
-            if (typeof PILOT_DATA !== 'undefined' && PILOT_DATA.data) {
-                localData = PILOT_DATA.data;
-            } else {
-                console.error("Файл data.js не найден или пуст!");
+            try {
+                const res = await fetch(FIREBASE_URL);
+                if (!res.ok) throw new Error("Firebase load error");
+                const json = await res.json();
+                // Если база пустая, возвращаем пустой массив
+                localData = (json && json.data) ? json.data : [];
+            } catch (e) {
+                console.error("Ошибка загрузки из Firebase:", e);
                 localData = [{ place: 1, id: 'NO DATA', score: 0 }];
             }
-            
-            // Запрашиваем SHA файла через GitHub API (нужно для перезаписи)
-            try {
-                const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`;
-                // Добавляем токен в заголовок, чтобы получить доступ даже к приватным репозиториям
-                const res = await fetch(url, { 
-                    headers: { 
-                        Accept: "application/vnd.github+json",
-                        Authorization: `Bearer ${GH_TOKEN}`
-                    } 
-                });
-                if (res.ok) {
-                    const json = await res.json();
-                    fileSha = json.sha;
-                } else {
-                    console.warn("Не удалось получить SHA файла. Возможна проблема с правами токена или именем репозитория.");
-                }
-            } catch (e) {
-                console.error("Ошибка при запросе SHA:", e);
-            }
-            
             updateData();
         }
 
-        document.getElementById('currentSourceText').textContent = isGoogleSource ? 'Google Таблица' : 'Локально';
+        document.getElementById('currentSourceText').textContent = isGoogleSource ? 'Google Таблица' : 'Firebase DB';
 
         function renderLeaderboard(data) {
             leaderboardBody.innerHTML = '';
@@ -244,7 +214,6 @@
         async function fetchGoogleSheet() {
             try {
                 const response = await fetch(GOOGLE_SHEET_URL);
-                if (!response.ok) throw new Error('Network error');
                 const csvText = await response.text();
                 const rows = []; let currentRow = []; let currentField = ''; let inQuotes = false;
                 for (let i = 0; i < csvText.length; i++) {
@@ -255,7 +224,6 @@
                     else currentField += char;
                 }
                 if (currentField !== '' || currentRow.length > 0) { currentRow.push(currentField.trim()); if (currentRow.some(cell => cell !== '')) rows.push(currentRow); }
-                if (rows.length === 0) return [];
                 const headers = rows[0].map(h => h.toLowerCase());
                 let colNum = headers.findIndex(h => h.includes('№') || h.includes('место'));
                 let colName = headers.findIndex(h => h.includes('фИО') || h.includes('участник') || h.includes('id'));
@@ -268,7 +236,7 @@
                 }
                 pilots.sort((a, b) => b.score - a.score); pilots.forEach((p, idx) => p.place = idx + 1);
                 return pilots.slice(0, 10);
-            } catch (error) { console.error("Ошибка загрузки:", error); return null; }
+            } catch (error) { return null; }
         }
 
         async function updateData() {
@@ -304,8 +272,7 @@
         
         document.getElementById('submitLoginBtn').addEventListener('click', () => {
             const inputPass = document.getElementById('passwordInput').value.trim();
-            const encodedInput = safeBtoa(inputPass);
-            if (encodedInput === ENCRYPTED_PASS) {
+            if (safeBtoa(inputPass) === ENCRYPTED_PASS) {
                 loginModal.classList.add('hidden'); loginModal.classList.remove('flex');
                 adminPanel.classList.remove('hidden'); renderAdminTable();
             } else { document.getElementById('errorText').classList.remove('hidden'); }
@@ -317,13 +284,13 @@
 
         sourceToggle.addEventListener('change', () => {
             isGoogleSource = sourceToggle.checked;
-            document.getElementById('currentSourceText').textContent = isGoogleSource ? 'Google Таблица' : 'Локально';
+            document.getElementById('currentSourceText').textContent = isGoogleSource ? 'Google Таблица' : 'Firebase DB';
             updateData();
         });
 
         document.getElementById('addRowBtn').addEventListener('click', () => { localData.push({ place: localData.length + 1, id: 'NEW_PILOT', score: 0 }); renderAdminTable(); });
 
-        // --- Функция сохранения в GitHub ---
+        // --- Логика сохранения в Firebase ---
         document.getElementById('saveTableBtn').addEventListener('click', async () => {
             const statusEl = document.getElementById('saveStatus');
             const btn = document.getElementById('saveTableBtn');
@@ -340,46 +307,31 @@
             btn.innerText = "Сохранение...";
             statusEl.classList.remove('hidden', 'text-red-500', 'text-green-500');
             statusEl.classList.add('text-cyan-400');
-            statusEl.innerText = "Отправка данных в репозиторий...";
+            statusEl.innerText = "Отправка данных в облако...";
 
             try {
-                const dataObj = { version: Date.now(), data: localData };
-                // Формируем текст JS-файла
-                const jsCode = `const PILOT_DATA = ${JSON.stringify(dataObj, null, 2)};`;
-                const encodedContent = safeBtoa(jsCode);
-
-                const response = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`, {
+                const payload = { version: Date.now(), data: localData };
+                // Используем PUT запрос для перезаписи узла leaderboard
+                const response = await fetch(FIREBASE_URL, {
                     method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${GH_TOKEN}`,
-                        'Accept': 'application/vnd.github+json'
-                    },
-                    body: JSON.stringify({
-                        message: "Update leaderboard via Admin Panel",
-                        content: encodedContent,
-                        sha: fileSha 
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
 
                 if (response.ok) {
-                    const resJson = await response.json();
-                    fileSha = resJson.content.sha; // Обновляем SHA на новый
-                    btn.innerText = "Сохранить изменения";
+                    btn.innerText = "Сохранить в облако";
                     statusEl.classList.remove('text-cyan-400', 'text-red-500');
                     statusEl.classList.add('text-green-500');
-                    statusEl.innerText = "Успешно сохранено в GitHub!";
+                    statusEl.innerText = "Успешно сохранено!";
                     setTimeout(() => statusEl.classList.add('hidden'), 4000);
                 } else {
-                    // Если ошибка, читаем сообщение от GitHub
-                    const errData = await response.json();
-                    throw new Error(errData.message || 'GitHub API Save Failed');
+                    throw new Error('Firebase Save Failed');
                 }
             } catch (error) {
                 console.error("Ошибка сохранения:", error);
-                btn.innerText = "Сохранить изменения";
+                btn.innerText = "Сохранить в облако";
                 statusEl.classList.remove('text-cyan-400', 'text-green-500');
                 statusEl.classList.add('text-red-500');
-                // Выводим точную ошибку на экран
                 statusEl.innerText = "Ошибка: " + error.message;
             }
         });
