@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Пилоты будущего · Движение первых</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Подключаем файл с данными -->
     <script src="data.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
@@ -151,9 +150,10 @@
 
     <script>
         // --- НАСТРОЙКИ GitHub API ---
-        const GH_TOKEN = "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";
-        const GH_OWNER = "nikhammer96";
-        const GH_REPO = "nikhammer96/pilots_of_future_2026";
+        // ВНИМАНИЕ: Проверьте правильность этих трех переменных!
+        const GH_TOKEN = "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";
+        const GH_OWNER = "nikhammer96"; // Без пробелов, точно как в URL репозитория
+        const GH_REPO = "pilots_of_future_2026"; // Без пробелов, точно как в URL репозитория
         const GH_PATH = "data.js";
 
         const ENCRYPTED_PASS = "RHBS" + "dHUy" + "MDI2" + "Iw==";
@@ -171,12 +171,21 @@
         let localData = [];
         let fileSha = null; 
 
-        function safeBtoa(str) {
-            try { return btoa(String.fromCharCode(...new TextEncoder().encode(str))); } 
-            catch (e) { console.error("Ошибка кодирования:", e); return null; }
+        // 100% надежная функция кодирования любых символов (включая кириллицу) в Base64
+        function utf8_to_b64(str) {
+            return btoa(unescape(encodeURIComponent(str)));
         }
 
-        // Инициализация данных (читаем из глобальной переменной PILOT_DATA)
+        function safeBtoa(str) {
+            try {
+                return utf8_to_b64(str);
+            } catch (e) {
+                console.error("Ошибка кодирования:", e);
+                return null;
+            }
+        }
+
+        // Инициализация данных
         async function initData() {
             if (typeof PILOT_DATA !== 'undefined' && PILOT_DATA.data) {
                 localData = PILOT_DATA.data;
@@ -188,13 +197,21 @@
             // Запрашиваем SHA файла через GitHub API (нужно для перезаписи)
             try {
                 const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`;
-                const res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
+                // Добавляем токен в заголовок, чтобы получить доступ даже к приватным репозиториям
+                const res = await fetch(url, { 
+                    headers: { 
+                        Accept: "application/vnd.github+json",
+                        Authorization: `Bearer ${GH_TOKEN}`
+                    } 
+                });
                 if (res.ok) {
                     const json = await res.json();
                     fileSha = json.sha;
+                } else {
+                    console.warn("Не удалось получить SHA файла. Возможна проблема с правами токена или именем репозитория.");
                 }
             } catch (e) {
-                console.error("Не удалось получить SHA файла:", e);
+                console.error("Ошибка при запросе SHA:", e);
             }
             
             updateData();
@@ -306,7 +323,7 @@
 
         document.getElementById('addRowBtn').addEventListener('click', () => { localData.push({ place: localData.length + 1, id: 'NEW_PILOT', score: 0 }); renderAdminTable(); });
 
-        // --- Функция сохранения в GitHub (перезапись data.js) ---
+        // --- Функция сохранения в GitHub ---
         document.getElementById('saveTableBtn').addEventListener('click', async () => {
             const statusEl = document.getElementById('saveStatus');
             const btn = document.getElementById('saveTableBtn');
@@ -326,8 +343,8 @@
             statusEl.innerText = "Отправка данных в репозиторий...";
 
             try {
-                // Формируем строку JS-кода, которая запишется в data.js
                 const dataObj = { version: Date.now(), data: localData };
+                // Формируем текст JS-файла
                 const jsCode = `const PILOT_DATA = ${JSON.stringify(dataObj, null, 2)};`;
                 const encodedContent = safeBtoa(jsCode);
 
@@ -346,21 +363,24 @@
 
                 if (response.ok) {
                     const resJson = await response.json();
-                    fileSha = resJson.content.sha; 
+                    fileSha = resJson.content.sha; // Обновляем SHA на новый
                     btn.innerText = "Сохранить изменения";
                     statusEl.classList.remove('text-cyan-400', 'text-red-500');
                     statusEl.classList.add('text-green-500');
                     statusEl.innerText = "Успешно сохранено в GitHub!";
                     setTimeout(() => statusEl.classList.add('hidden'), 4000);
                 } else {
-                    throw new Error('GitHub API Save Failed');
+                    // Если ошибка, читаем сообщение от GitHub
+                    const errData = await response.json();
+                    throw new Error(errData.message || 'GitHub API Save Failed');
                 }
             } catch (error) {
-                console.error(error);
+                console.error("Ошибка сохранения:", error);
                 btn.innerText = "Сохранить изменения";
                 statusEl.classList.remove('text-cyan-400', 'text-green-500');
                 statusEl.classList.add('text-red-500');
-                statusEl.innerText = "Ошибка сохранения! Проверьте токен.";
+                // Выводим точную ошибку на экран
+                statusEl.innerText = "Ошибка: " + error.message;
             }
         });
 
