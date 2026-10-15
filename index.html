@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Движение первых · Пилоты будущего</title>
+    <title>Пилоты будущего · Движение первых</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
@@ -236,7 +236,7 @@
             <div class="glass p-6 mb-8 flex items-center justify-between flex-wrap gap-4">
                 <div>
                     <h3 class="text-xl font-semibold uppercase tracking-wider">Источник данных</h3>
-                    <p class="text-slate-400 text-sm font-mono">Текущий: <span id="currentSourceText" class="font-bold text-cyan-400">Google Таблица</span></p>
+                    <p class="text-slate-400 text-sm font-mono">Текущий: <span id="currentSourceText" class="font-bold text-cyan-400">Локально</span></p>
                 </div>
                 <div class="flex items-center gap-4">
                     <span class="text-sm uppercase font-semibold">Локально</span>
@@ -272,12 +272,12 @@
     </div>
 
     <script>
-        // Зашифрованный пароль (Base64). Проверка: btoa("DpRtu2026#") === "RHBSdHUyMDI2Iw=="
-        const ENCRYPTED_PASS = "RHBSdHUyMDI2Iw==";
+        // Зашифрованный пароль (Base64). Разбит на части для надежности.
+        // Оригинал: DpRtu2026#
+        const ENCRYPTED_PASS = "RHBS" + "dHUy" + "MDI2" + "Iw==";
         const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1j7yzaNAlo82pU2l5eoCJQ_1U7Dss9h1t/export?format=csv&gid=0";
         
         // Элементы DOM
-        const mainView = document.getElementById('mainView');
         const hiddenLoginBtn = document.getElementById('hiddenLoginBtn');
         const loginModal = document.getElementById('loginModal');
         const adminPanel = document.getElementById('adminPanel');
@@ -285,27 +285,69 @@
         const adminTableBody = document.getElementById('adminTableBody');
         const sourceToggle = document.getElementById('sourceToggle');
 
-        let isGoogleSource = true;
-        let localData = JSON.parse(localStorage.getItem('droneLeaderboard')) || [];
+        // По умолчанию отключаем Google Таблицы
+        let isGoogleSource = false;
+        sourceToggle.checked = isGoogleSource;
+        
+        let localData = [];
+        let localVersion = parseInt(localStorage.getItem('droneVersion')) || 0;
 
-        // Инициализация по умолчанию
-        if (localData.length === 0) {
-            localData = [
-                { place: 1, id: 'PILOT_001', score: 150 },
-                { place: 2, id: 'PILOT_002', score: 140 },
-                { place: 3, id: 'PILOT_003', score: 130 },
-                { place: 4, id: 'PILOT_004', score: 120 },
-                { place: 5, id: 'PILOT_005', score: 110 },
-                { place: 6, id: 'PILOT_006', score: 100 },
-                { place: 7, id: 'PILOT_007', score: 90 },
-                { place: 8, id: 'PILOT_008', score: 80 },
-                { place: 9, id: 'PILOT_009', score: 70 },
-                { place: 10, id: 'PILOT_010', score: 60 }
-            ];
-            localStorage.setItem('droneLeaderboard', JSON.stringify(localData));
+        // Безопасное кодирование в Base64
+        function safeBtoa(str) {
+            try {
+                return btoa(String.fromCharCode(...new TextEncoder().encode(str)));
+            } catch (e) {
+                console.error("Ошибка кодирования:", e);
+                return null;
+            }
         }
 
-        sourceToggle.checked = isGoogleSource;
+        // Инициализация данных: загрузка из data.json или localStorage
+        async function initData() {
+            const storedData = localStorage.getItem('droneLeaderboard');
+            
+            try {
+                // Проверяем файл data.json на наличие обновлений (по полю version)
+                const res = await fetch('data.json?v=' + new Date().getTime());
+                if (!res.ok) throw new Error('data.json not found');
+                const json = await res.json();
+                
+                // Если версия в файле новее, чем в браузере - обновляем данные
+                if (json.version > localVersion) {
+                    localData = json.data;
+                    localStorage.setItem('droneLeaderboard', JSON.stringify(localData));
+                    localStorage.setItem('droneVersion', json.version);
+                } else if (storedData) {
+                    // Иначе используем сохраненные в браузере изменения
+                    localData = JSON.parse(storedData);
+                } else {
+                    localData = json.data;
+                    localStorage.setItem('droneLeaderboard', JSON.stringify(localData));
+                }
+            } catch (e) {
+                console.error("Ошибка загрузки data.json, используем localStorage или дефолт:", e);
+                if (storedData) {
+                    localData = JSON.parse(storedData);
+                } else {
+                    // Дефолтные данные, если файла нет
+                    localData = [
+                        { place: 1, id: 'PILOT_001', score: 150 },
+                        { place: 2, id: 'PILOT_002', score: 140 },
+                        { place: 3, id: 'PILOT_003', score: 130 },
+                        { place: 4, id: 'PILOT_004', score: 120 },
+                        { place: 5, id: 'PILOT_005', score: 110 },
+                        { place: 6, id: 'PILOT_006', score: 100 },
+                        { place: 7, id: 'PILOT_007', score: 90 },
+                        { place: 8, id: 'PILOT_008', score: 80 },
+                        { place: 9, id: 'PILOT_009', score: 70 },
+                        { place: 10, id: 'PILOT_010', score: 60 }
+                    ];
+                    localStorage.setItem('droneLeaderboard', JSON.stringify(localData));
+                }
+            }
+            updateData();
+        }
+
         document.getElementById('currentSourceText').textContent = isGoogleSource ? 'Google Таблица' : 'Локально';
 
         // Отрисовка главной таблицы
@@ -320,7 +362,6 @@
                 const rank = pilot.place || (index + 1);
                 let rowClass = 'border-b border-slate-800/50';
                 
-                // Единое выделение для первых 5 мест
                 if (rank <= 5) rowClass = 'top-5';
 
                 const tr = document.createElement('tr');
@@ -335,7 +376,7 @@
             });
         }
 
-        // Загрузка из Google Таблицы
+        // Загрузка из Google Таблицы (срабатывает только если переключить ползунок)
         async function fetchGoogleSheet() {
             try {
                 const response = await fetch(GOOGLE_SHEET_URL);
@@ -448,8 +489,8 @@
         });
 
         document.getElementById('submitLoginBtn').addEventListener('click', () => {
-            const inputPass = document.getElementById('passwordInput').value;
-            const encodedInput = btoa(inputPass);
+            const inputPass = document.getElementById('passwordInput').value.trim();
+            const encodedInput = safeBtoa(inputPass);
             
             if (encodedInput === ENCRYPTED_PASS) {
                 loginModal.classList.add('hidden');
@@ -493,6 +534,7 @@
             localStorage.setItem('droneLeaderboard', JSON.stringify(localData));
             document.getElementById('saveStatus').classList.remove('hidden');
             setTimeout(() => document.getElementById('saveStatus').classList.add('hidden'), 3000);
+            updateData(); // Обновляем главную таблицу сразу
         });
 
         // Горячая клавиша входа (Ctrl + Shift + A)
@@ -504,8 +546,7 @@
         });
 
         // Запуск
-        updateData();
-        setInterval(updateData, 30000); // Обновление раз в 30 секунд
+        initData();
     </script>
 </body>
 </html>
