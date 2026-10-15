@@ -5,150 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Пилоты будущего · Движение первых</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключаем файл с данными -->
+    <script src="data.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Rajdhani', sans-serif;
-            background-color: #050505;
-            color: #e2e8f0;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* OSD Фон (эффект очков дрона) */
-        .osd-bg {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 0;
-            pointer-events: none;
-            opacity: 0.3;
-        }
-        .osd-grid {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: 
-                linear-gradient(rgba(0, 255, 204, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 255, 204, 0.1) 1px, transparent 1px);
-            background-size: 40px 40px;
-        }
-        .osd-crosshair {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 200px; height: 200px;
-            border: 2px solid rgba(0, 255, 204, 0.1);
-            border-radius: 50%;
-        }
-        .osd-crosshair::before, .osd-crosshair::after {
-            content: ''; position: absolute; background: rgba(0, 255, 204, 0.2);
-        }
+        body { font-family: 'Rajdhani', sans-serif; background-color: #050505; color: #e2e8f0; min-height: 100vh; overflow-x: hidden; }
+        .osd-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.3; }
+        .osd-grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(0, 255, 204, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 204, 0.1) 1px, transparent 1px); background-size: 40px 40px; }
+        .osd-crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 200px; border: 2px solid rgba(0, 255, 204, 0.1); border-radius: 50%; }
+        .osd-crosshair::before, .osd-crosshair::after { content: ''; position: absolute; background: rgba(0, 255, 204, 0.2); }
         .osd-crosshair::before { top: 50%; left: -20px; width: 240px; height: 1px; }
         .osd-crosshair::after { left: 50%; top: -20px; height: 240px; width: 1px; }
-        
-        .osd-horizon {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 300px; height: 1px;
-            background: #ff0040;
-            box-shadow: 0 0 5px #ff0040;
-            animation: horizonMove 4s ease-in-out infinite;
-        }
-        @keyframes horizonMove {
-            0%, 100% { width: 300px; transform: translate(-50%, -50%) rotate(0deg); }
-            50% { width: 200px; transform: translate(-50%, -50%) rotate(5deg); }
-        }
-
-        .osd-text {
-            position: absolute;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 14px;
-            text-shadow: 0 0 5px rgba(0, 255, 204, 0.8);
-            color: #00ffcc;
-        }
-        .tl { top: 20px; left: 20px; }
-        .tr { top: 20px; right: 20px; text-align: right; }
-        .bl { bottom: 20px; left: 20px; }
-        .br { bottom: 20px; right: 20px; text-align: right; }
-
-        .scanline {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 10px;
-            background: linear-gradient(transparent, rgba(0, 255, 204, 0.2), transparent);
-            animation: scan 4s linear infinite;
-        }
+        .osd-horizon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 1px; background: #ff0040; box-shadow: 0 0 5px #ff0040; animation: horizonMove 4s ease-in-out infinite; }
+        @keyframes horizonMove { 0%, 100% { width: 300px; transform: translate(-50%, -50%) rotate(0deg); } 50% { width: 200px; transform: translate(-50%, -50%) rotate(5deg); } }
+        .osd-text { position: absolute; font-family: 'Share Tech Mono', monospace; font-size: 14px; text-shadow: 0 0 5px rgba(0, 255, 204, 0.8); color: #00ffcc; }
+        .tl { top: 20px; left: 20px; } .tr { top: 20px; right: 20px; text-align: right; } .bl { bottom: 20px; left: 20px; } .br { bottom: 20px; right: 20px; text-align: right; }
+        .scanline { position: absolute; top: 0; left: 0; width: 100%; height: 10px; background: linear-gradient(transparent, rgba(0, 255, 204, 0.2), transparent); animation: scan 4s linear infinite; }
         @keyframes scan { 0% { top: -10%; } 100% { top: 110%; } }
-
-        .rec-dot {
-            display: inline-block; width: 10px; height: 10px; 
-            background: #ff0040; border-radius: 50%; margin-right: 5px;
-            box-shadow: 0 0 5px #ff0040;
-            animation: blink 1s infinite;
-        }
+        .rec-dot { display: inline-block; width: 10px; height: 10px; background: #ff0040; border-radius: 50%; margin-right: 5px; box-shadow: 0 0 5px #ff0040; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0; } }
-
-        /* Контейнеры */
-        .glass {
-            background: rgba(5, 5, 5, 0.7);
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(0, 255, 204, 0.2);
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
-        }
-
-        /* Заголовок */
-        h1 {
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-            letter-spacing: 0.05em;
-        }
-        .accent-line {
-            height: 4px;
-            background: linear-gradient(90deg, transparent 0%, #00ffcc 50%, transparent 100%);
-            width: 150px;
-            margin: 0 auto;
-            box-shadow: 0 0 10px #00ffcc;
-        }
-
-        /* Выделение ТОП-5 */
-        .top-5 {
-            background: linear-gradient(90deg, rgba(0, 255, 204, 0.1) 0%, rgba(0, 255, 204, 0.01) 100%);
-            border-left: 4px solid #00ffcc;
-            box-shadow: inset 0 0 30px rgba(0, 255, 204, 0.05);
-            animation: pulseNeon 3s infinite;
-        }
-        @keyframes pulseNeon {
-            0%, 100% { border-left-color: #00ffcc; }
-            50% { border-left-color: #00d4ff; box-shadow: inset 0 0 30px rgba(0, 212, 255, 0.1); }
-        }
-
-        /* Анимация появления строк */
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translate3d(0, 30px, 0); }
-            to { opacity: 1; transform: translate3d(0, 0, 0); }
-        }
+        .glass { background: rgba(5, 5, 5, 0.7); backdrop-filter: blur(4px); border: 1px solid rgba(0, 255, 204, 0.2); box-shadow: 0 0 20px rgba(0, 0, 0, 0.8); }
+        h1 { text-shadow: 0 0 20px rgba(255, 255, 255, 0.3); letter-spacing: 0.05em; }
+        .accent-line { height: 4px; background: linear-gradient(90deg, transparent 0%, #00ffcc 50%, transparent 100%); width: 150px; margin: 0 auto; box-shadow: 0 0 10px #00ffcc; }
+        .top-5 { background: linear-gradient(90deg, rgba(0, 255, 204, 0.1) 0%, rgba(0, 255, 204, 0.01) 100%); border-left: 4px solid #00ffcc; box-shadow: inset 0 0 30px rgba(0, 255, 204, 0.05); animation: pulseNeon 3s infinite; }
+        @keyframes pulseNeon { 0%, 100% { border-left-color: #00ffcc; } 50% { border-left-color: #00d4ff; box-shadow: inset 0 0 30px rgba(0, 212, 255, 0.1); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translate3d(0, 30px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
         .row-anim { animation: fadeInUp 0.5s ease-out forwards; opacity: 0; }
-
-        /* Ползунок */
         .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #1a1a1a; transition: .4s; border-radius: 34px;
-            border: 1px solid #00ffcc;
-        }
-        .slider:before {
-            position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px;
-            background-color: #00ffcc; transition: .4s; border-radius: 50%;
-            box-shadow: 0 0 5px #00ffcc;
-        }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #1a1a1a; transition: .4s; border-radius: 34px; border: 1px solid #00ffcc; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: #00ffcc; transition: .4s; border-radius: 50%; box-shadow: 0 0 5px #00ffcc; }
         input:checked + .slider { background-color: rgba(0, 255, 204, 0.2); }
         input:checked + .slider:before { transform: translateX(26px); }
-
-        .hidden-login {
-            position: fixed; bottom: 10px; right: 10px; width: 15px; height: 15px;
-            background: transparent; border: none; cursor: pointer; opacity: 0.1; z-index: 50;
-        }
+        .hidden-login { position: fixed; bottom: 10px; right: 10px; width: 15px; height: 15px; background: transparent; border: none; cursor: pointer; opacity: 0.1; z-index: 50; }
         .hidden-login:hover { opacity: 0.5; }
-
         input, button { font-family: 'Rajdhani', sans-serif; font-weight: 600; }
         input { color: #00ffcc; letter-spacing: 0.05em; }
         input:focus { outline: none; }
@@ -156,7 +46,6 @@
 </head>
 <body>
 
-    <!-- OSD Фон -->
     <div class="osd-bg">
         <div class="osd-grid"></div>
         <div class="osd-crosshair"></div>
@@ -168,10 +57,7 @@
         <div class="scanline"></div>
     </div>
 
-    <!-- Главный экран -->
     <div id="mainView" class="relative z-10 container mx-auto px-4 py-12 max-w-5xl">
-        
-        <!-- Заголовок соревнования -->
         <header class="text-center mb-16 relative">
             <p class="text-cyan-400 tracking-[0.5em] text-sm md:text-base uppercase mb-4 font-mono">// FPV Racing Tournament</p>
             <h1 class="text-5xl md:text-8xl font-bold uppercase text-white mb-6">Пилоты будущего</h1>
@@ -183,7 +69,6 @@
             <div class="accent-line"></div>
         </header>
 
-        <!-- Таблица -->
         <div class="glass rounded-none shadow-2xl overflow-hidden">
             <div class="bg-cyan-500/10 px-6 py-3 border-b border-cyan-500/30">
                 <h2 class="text-xl text-cyan-400 font-bold tracking-[0.2em] uppercase font-mono">Leaderboard · Top 10</h2>
@@ -197,18 +82,14 @@
                             <th class="p-4 text-right w-32">Score</th>
                         </tr>
                     </thead>
-                    <tbody id="leaderboardBody" class="divide-y divide-slate-800/50">
-                        <!-- Данные -->
-                    </tbody>
+                    <tbody id="leaderboardBody" class="divide-y divide-slate-800/50"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- Скрытая кнопка входа -->
     <button id="hiddenLoginBtn" class="hidden-login" title="Войти"></button>
 
-    <!-- Модальное окно входа -->
     <div id="loginModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
         <div class="glass p-8 max-w-md w-full border-cyan-500/30">
             <h2 class="text-2xl font-bold mb-6 text-center uppercase tracking-[0.2em] text-cyan-400 font-mono">System Access</h2>
@@ -221,7 +102,6 @@
         </div>
     </div>
 
-    <!-- Админ-панель -->
     <div id="adminPanel" class="fixed inset-0 bg-slate-900 z-40 hidden overflow-y-auto">
         <div class="container mx-auto p-6 max-w-4xl relative z-10">
             <div class="flex justify-between items-center mb-8 flex-wrap gap-4 border-b border-slate-700 pb-4">
@@ -232,7 +112,6 @@
                 </div>
             </div>
 
-            <!-- Переключатель источника данных -->
             <div class="glass p-6 mb-8 flex items-center justify-between flex-wrap gap-4">
                 <div>
                     <h3 class="text-xl font-semibold uppercase tracking-wider">Источник данных</h3>
@@ -248,7 +127,6 @@
                 </div>
             </div>
 
-            <!-- Редактируемая таблица -->
             <div class="glass p-6">
                 <h3 class="text-xl font-semibold mb-4 uppercase tracking-wider">Редактирование таблицы</h3>
                 <div class="overflow-x-auto mb-4">
@@ -266,18 +144,21 @@
                 </div>
                 <button id="addRowBtn" class="bg-green-600/20 border border-green-600 text-green-400 hover:bg-green-600 hover:text-black px-4 py-2 mb-4 transition uppercase font-semibold tracking-wider">+ Добавить</button>
                 <button id="saveTableBtn" class="bg-cyan-500/20 border border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-black px-6 py-3 w-full transition uppercase font-bold tracking-[0.2em]">Сохранить изменения</button>
-                <p id="saveStatus" class="text-green-500 text-sm mt-2 text-center hidden font-mono">Данные успешно сохранены!</p>
+                <p id="saveStatus" class="text-sm mt-2 text-center hidden font-mono"></p>
             </div>
         </div>
     </div>
 
     <script>
-        // Зашифрованный пароль (Base64). Разбит на части для надежности.
-        // Оригинал: DpRtu2026#
+        // --- НАСТРОЙКИ GitHub API ---
+        const GH_TOKEN = "ВСТАВЬТЕ_ВАШ_ТОКЕН_СЮДА";
+        const GH_OWNER = "ВАШ_НИКНЕЙМ";
+        const GH_REPO = "ИМЯ_РЕПОЗИТОРИЯ";
+        const GH_PATH = "data.js";
+
         const ENCRYPTED_PASS = "RHBS" + "dHUy" + "MDI2" + "Iw==";
         const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1j7yzaNAlo82pU2l5eoCJQ_1U7Dss9h1t/export?format=csv&gid=0";
         
-        // Элементы DOM
         const hiddenLoginBtn = document.getElementById('hiddenLoginBtn');
         const loginModal = document.getElementById('loginModal');
         const adminPanel = document.getElementById('adminPanel');
@@ -285,85 +166,52 @@
         const adminTableBody = document.getElementById('adminTableBody');
         const sourceToggle = document.getElementById('sourceToggle');
 
-        // По умолчанию отключаем Google Таблицы
         let isGoogleSource = false;
         sourceToggle.checked = isGoogleSource;
-        
         let localData = [];
-        let localVersion = parseInt(localStorage.getItem('droneVersion')) || 0;
+        let fileSha = null; 
 
-        // Безопасное кодирование в Base64
         function safeBtoa(str) {
-            try {
-                return btoa(String.fromCharCode(...new TextEncoder().encode(str)));
-            } catch (e) {
-                console.error("Ошибка кодирования:", e);
-                return null;
-            }
+            try { return btoa(String.fromCharCode(...new TextEncoder().encode(str))); } 
+            catch (e) { console.error("Ошибка кодирования:", e); return null; }
         }
 
-        // Инициализация данных: загрузка из data.json или localStorage
+        // Инициализация данных (читаем из глобальной переменной PILOT_DATA)
         async function initData() {
-            const storedData = localStorage.getItem('droneLeaderboard');
+            if (typeof PILOT_DATA !== 'undefined' && PILOT_DATA.data) {
+                localData = PILOT_DATA.data;
+            } else {
+                console.error("Файл data.js не найден или пуст!");
+                localData = [{ place: 1, id: 'NO DATA', score: 0 }];
+            }
             
+            // Запрашиваем SHA файла через GitHub API (нужно для перезаписи)
             try {
-                // Проверяем файл data.json на наличие обновлений (по полю version)
-                const res = await fetch('data.json?v=' + new Date().getTime());
-                if (!res.ok) throw new Error('data.json not found');
-                const json = await res.json();
-                
-                // Если версия в файле новее, чем в браузере - обновляем данные
-                if (json.version > localVersion) {
-                    localData = json.data;
-                    localStorage.setItem('droneLeaderboard', JSON.stringify(localData));
-                    localStorage.setItem('droneVersion', json.version);
-                } else if (storedData) {
-                    // Иначе используем сохраненные в браузере изменения
-                    localData = JSON.parse(storedData);
-                } else {
-                    localData = json.data;
-                    localStorage.setItem('droneLeaderboard', JSON.stringify(localData));
+                const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`;
+                const res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
+                if (res.ok) {
+                    const json = await res.json();
+                    fileSha = json.sha;
                 }
             } catch (e) {
-                console.error("Ошибка загрузки data.json, используем localStorage или дефолт:", e);
-                if (storedData) {
-                    localData = JSON.parse(storedData);
-                } else {
-                    // Дефолтные данные, если файла нет
-                    localData = [
-                        { place: 1, id: 'PILOT_001', score: 150 },
-                        { place: 2, id: 'PILOT_002', score: 140 },
-                        { place: 3, id: 'PILOT_003', score: 130 },
-                        { place: 4, id: 'PILOT_004', score: 120 },
-                        { place: 5, id: 'PILOT_005', score: 110 },
-                        { place: 6, id: 'PILOT_006', score: 100 },
-                        { place: 7, id: 'PILOT_007', score: 90 },
-                        { place: 8, id: 'PILOT_008', score: 80 },
-                        { place: 9, id: 'PILOT_009', score: 70 },
-                        { place: 10, id: 'PILOT_010', score: 60 }
-                    ];
-                    localStorage.setItem('droneLeaderboard', JSON.stringify(localData));
-                }
+                console.error("Не удалось получить SHA файла:", e);
             }
+            
             updateData();
         }
 
         document.getElementById('currentSourceText').textContent = isGoogleSource ? 'Google Таблица' : 'Локально';
 
-        // Отрисовка главной таблицы
         function renderLeaderboard(data) {
             leaderboardBody.innerHTML = '';
             if (!data || data.length === 0) {
                 leaderboardBody.innerHTML = `<tr><td colspan="3" class="p-8 text-center text-slate-500 font-mono tracking-widest">NO SIGNAL OR DATA EMPTY</td></tr>`;
                 return;
             }
-
             data.slice(0, 10).forEach((pilot, index) => {
                 const rank = pilot.place || (index + 1);
                 let rowClass = 'border-b border-slate-800/50';
-                
                 if (rank <= 5) rowClass = 'top-5';
-
                 const tr = document.createElement('tr');
                 tr.className = `${rowClass} hover:bg-cyan-500/5 transition row-anim`;
                 tr.style.animationDelay = `${index * 0.1}s`;
@@ -376,70 +224,34 @@
             });
         }
 
-        // Загрузка из Google Таблицы (срабатывает только если переключить ползунок)
         async function fetchGoogleSheet() {
             try {
                 const response = await fetch(GOOGLE_SHEET_URL);
                 if (!response.ok) throw new Error('Network error');
                 const csvText = await response.text();
-                
-                const rows = [];
-                let currentRow = [];
-                let currentField = '';
-                let inQuotes = false;
-
+                const rows = []; let currentRow = []; let currentField = ''; let inQuotes = false;
                 for (let i = 0; i < csvText.length; i++) {
                     const char = csvText[i];
-                    if (char === '"') {
-                        inQuotes = !inQuotes;
-                    } else if (char === ',' && !inQuotes) {
-                        currentRow.push(currentField.trim());
-                        currentField = '';
-                    } else if (char === '\n' && !inQuotes) {
-                        currentRow.push(currentField.trim());
-                        if (currentRow.some(cell => cell !== '')) rows.push(currentRow);
-                        currentRow = [];
-                        currentField = '';
-                    } else {
-                        currentField += char;
-                    }
+                    if (char === '"') inQuotes = !inQuotes;
+                    else if (char === ',' && !inQuotes) { currentRow.push(currentField.trim()); currentField = ''; }
+                    else if (char === '\n' && !inQuotes) { currentRow.push(currentField.trim()); if (currentRow.some(cell => cell !== '')) rows.push(currentRow); currentRow = []; currentField = ''; }
+                    else currentField += char;
                 }
-                if (currentField !== '' || currentRow.length > 0) {
-                    currentRow.push(currentField.trim());
-                    if (currentRow.some(cell => cell !== '')) rows.push(currentRow);
-                }
-
+                if (currentField !== '' || currentRow.length > 0) { currentRow.push(currentField.trim()); if (currentRow.some(cell => cell !== '')) rows.push(currentRow); }
                 if (rows.length === 0) return [];
                 const headers = rows[0].map(h => h.toLowerCase());
-                
                 let colNum = headers.findIndex(h => h.includes('№') || h.includes('место'));
                 let colName = headers.findIndex(h => h.includes('фИО') || h.includes('участник') || h.includes('id'));
                 let colScore = headers.findIndex(h => h.includes('балл'));
-                
-                if (colNum === -1) colNum = 0;
-                if (colName === -1) colName = 1;
-                if (colScore === -1) colScore = 2;
-
+                if (colNum === -1) colNum = 0; if (colName === -1) colName = 1; if (colScore === -1) colScore = 2;
                 const pilots = [];
                 for (let i = 1; i < rows.length; i++) {
-                    const row = rows[i];
-                    if (!row[colName] || !row[colScore]) continue;
-                    
-                    pilots.push({
-                        place: parseInt(row[colNum]) || (pilots.length + 1),
-                        id: row[colName],
-                        score: parseInt(row[colScore]) || 0
-                    });
+                    const row = rows[i]; if (!row[colName] || !row[colScore]) continue;
+                    pilots.push({ place: parseInt(row[colNum]) || (pilots.length + 1), id: row[colName], score: parseInt(row[colScore]) || 0 });
                 }
-
-                pilots.sort((a, b) => b.score - a.score);
-                pilots.forEach((p, idx) => p.place = idx + 1);
-
+                pilots.sort((a, b) => b.score - a.score); pilots.forEach((p, idx) => p.place = idx + 1);
                 return pilots.slice(0, 10);
-            } catch (error) {
-                console.error("Ошибка загрузки:", error);
-                return null;
-            }
+            } catch (error) { console.error("Ошибка загрузки:", error); return null; }
         }
 
         async function updateData() {
@@ -453,7 +265,6 @@
             }
         }
 
-        // Отрисовка админской таблицы
         function renderAdminTable() {
             adminTableBody.innerHTML = '';
             localData.forEach((pilot, index) => {
@@ -469,43 +280,21 @@
             });
         }
 
-        window.deleteRow = function(index) {
-            localData.splice(index, 1);
-            renderAdminTable();
-        }
+        window.deleteRow = function(index) { localData.splice(index, 1); renderAdminTable(); }
 
-        // События
-        hiddenLoginBtn.addEventListener('click', () => {
-            loginModal.classList.remove('hidden');
-            loginModal.classList.add('flex');
-            document.getElementById('passwordInput').focus();
-        });
-
-        document.getElementById('cancelLoginBtn').addEventListener('click', () => {
-            loginModal.classList.add('hidden');
-            loginModal.classList.remove('flex');
-            document.getElementById('passwordInput').value = '';
-            document.getElementById('errorText').classList.add('hidden');
-        });
-
+        hiddenLoginBtn.addEventListener('click', () => { loginModal.classList.remove('hidden'); loginModal.classList.add('flex'); document.getElementById('passwordInput').focus(); });
+        document.getElementById('cancelLoginBtn').addEventListener('click', () => { loginModal.classList.add('hidden'); loginModal.classList.remove('flex'); document.getElementById('passwordInput').value = ''; document.getElementById('errorText').classList.add('hidden'); });
+        
         document.getElementById('submitLoginBtn').addEventListener('click', () => {
             const inputPass = document.getElementById('passwordInput').value.trim();
             const encodedInput = safeBtoa(inputPass);
-            
             if (encodedInput === ENCRYPTED_PASS) {
-                loginModal.classList.add('hidden');
-                loginModal.classList.remove('flex');
-                adminPanel.classList.remove('hidden');
-                renderAdminTable();
-            } else {
-                document.getElementById('errorText').classList.remove('hidden');
-            }
+                loginModal.classList.add('hidden'); loginModal.classList.remove('flex');
+                adminPanel.classList.remove('hidden'); renderAdminTable();
+            } else { document.getElementById('errorText').classList.remove('hidden'); }
         });
 
-        document.getElementById('passwordInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') document.getElementById('submitLoginBtn').click();
-        });
-
+        document.getElementById('passwordInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('submitLoginBtn').click(); });
         document.getElementById('logoutBtn').addEventListener('click', () => adminPanel.classList.add('hidden'));
         document.getElementById('viewSiteBtn').addEventListener('click', () => adminPanel.classList.add('hidden'));
 
@@ -515,37 +304,70 @@
             updateData();
         });
 
-        document.getElementById('addRowBtn').addEventListener('click', () => {
-            localData.push({ place: localData.length + 1, id: 'NEW_PILOT', score: 0 });
-            renderAdminTable();
-        });
+        document.getElementById('addRowBtn').addEventListener('click', () => { localData.push({ place: localData.length + 1, id: 'NEW_PILOT', score: 0 }); renderAdminTable(); });
 
-        document.getElementById('saveTableBtn').addEventListener('click', () => {
+        // --- Функция сохранения в GitHub (перезапись data.js) ---
+        document.getElementById('saveTableBtn').addEventListener('click', async () => {
+            const statusEl = document.getElementById('saveStatus');
+            const btn = document.getElementById('saveTableBtn');
+            
             const inputs = document.querySelectorAll('#adminTableBody input');
             inputs.forEach(input => {
-                const index = input.dataset.index;
-                const field = input.dataset.field;
-                if (field === 'id') {
-                    localData[index][field] = input.value;
-                } else {
-                    localData[index][field] = parseInt(input.value) || 0;
-                }
+                const index = input.dataset.index; const field = input.dataset.field;
+                if (field === 'id') localData[index][field] = input.value;
+                else localData[index][field] = parseInt(input.value) || 0;
             });
-            localStorage.setItem('droneLeaderboard', JSON.stringify(localData));
-            document.getElementById('saveStatus').classList.remove('hidden');
-            setTimeout(() => document.getElementById('saveStatus').classList.add('hidden'), 3000);
-            updateData(); // Обновляем главную таблицу сразу
-        });
 
-        // Горячая клавиша входа (Ctrl + Shift + A)
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
-                e.preventDefault();
-                hiddenLoginBtn.click();
+            updateData();
+
+            btn.innerText = "Сохранение...";
+            statusEl.classList.remove('hidden', 'text-red-500', 'text-green-500');
+            statusEl.classList.add('text-cyan-400');
+            statusEl.innerText = "Отправка данных в репозиторий...";
+
+            try {
+                // Формируем строку JS-кода, которая запишется в data.js
+                const dataObj = { version: Date.now(), data: localData };
+                const jsCode = `const PILOT_DATA = ${JSON.stringify(dataObj, null, 2)};`;
+                const encodedContent = safeBtoa(jsCode);
+
+                const response = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${GH_TOKEN}`,
+                        'Accept': 'application/vnd.github+json'
+                    },
+                    body: JSON.stringify({
+                        message: "Update leaderboard via Admin Panel",
+                        content: encodedContent,
+                        sha: fileSha 
+                    })
+                });
+
+                if (response.ok) {
+                    const resJson = await response.json();
+                    fileSha = resJson.content.sha; 
+                    btn.innerText = "Сохранить изменения";
+                    statusEl.classList.remove('text-cyan-400', 'text-red-500');
+                    statusEl.classList.add('text-green-500');
+                    statusEl.innerText = "Успешно сохранено в GitHub!";
+                    setTimeout(() => statusEl.classList.add('hidden'), 4000);
+                } else {
+                    throw new Error('GitHub API Save Failed');
+                }
+            } catch (error) {
+                console.error(error);
+                btn.innerText = "Сохранить изменения";
+                statusEl.classList.remove('text-cyan-400', 'text-green-500');
+                statusEl.classList.add('text-red-500');
+                statusEl.innerText = "Ошибка сохранения! Проверьте токен.";
             }
         });
 
-        // Запуск
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) { e.preventDefault(); hiddenLoginBtn.click(); }
+        });
+
         initData();
     </script>
 </body>
