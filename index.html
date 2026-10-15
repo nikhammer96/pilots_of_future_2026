@@ -40,6 +40,9 @@
         input, button { font-family: 'Rajdhani', sans-serif; font-weight: 600; }
         input { color: #00ffcc; letter-spacing: 0.05em; }
         input:focus { outline: none; }
+        
+        /* Индикатор Live подключения */
+        .live-dot { display: inline-block; width: 8px; height: 8px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 5px #00ff00; animation: blink 2s infinite; margin-right: 5px; }
     </style>
 </head>
 <body>
@@ -68,8 +71,9 @@
         </header>
 
         <div class="glass rounded-none shadow-2xl overflow-hidden">
-            <div class="bg-cyan-500/10 px-6 py-3 border-b border-cyan-500/30">
+            <div class="bg-cyan-500/10 px-6 py-3 border-b border-cyan-500/30 flex justify-between items-center">
                 <h2 class="text-xl text-cyan-400 font-bold tracking-[0.2em] uppercase font-mono">Leaderboard · Top 10</h2>
+                <div class="text-xs text-green-400 font-mono flex items-center"><span class="live-dot"></span>LIVE</div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
@@ -150,7 +154,6 @@
     <script>
         // --- НАСТРОЙКИ FIREBASE ---
         // Вставьте URL вашей базы данных (взятый из консоли Firebase)
-        // Пример: https://my-project-123.firebaseio.com/leaderboard.json
         const FIREBASE_URL = "https://pilots-of-future2026-default-rtdb.asia-southeast1.firebasedatabase.app/leaderboard.json";
 
         const ENCRYPTED_PASS = "RHBS" + "dHUy" + "MDI2" + "Iw==";
@@ -166,25 +169,48 @@
         let isGoogleSource = false;
         sourceToggle.checked = isGoogleSource;
         let localData = [];
+        let eventSource = null; // Переменная для хранения соединения SSE
 
         function safeBtoa(str) {
             try { return btoa(unescape(encodeURIComponent(str))); } 
             catch (e) { return null; }
         }
 
-        // Инициализация данных: загрузка из Firebase
-        async function initData() {
-            try {
-                const res = await fetch(FIREBASE_URL);
-                if (!res.ok) throw new Error("Firebase load error");
-                const json = await res.json();
-                // Если база пустая, возвращаем пустой массив
-                localData = (json && json.data) ? json.data : [];
-            } catch (e) {
-                console.error("Ошибка загрузки из Firebase:", e);
-                localData = [{ place: 1, id: 'NO DATA', score: 0 }];
-            }
-            updateData();
+        // --- Инициализация данных и запуск Live-слушателя ---
+        function initData() {
+            startRealtimeListener();
+        }
+
+        // --- Функция подключения к Firebase Realtime (SSE) ---
+        function startRealtimeListener() {
+            if (eventSource) eventSource.close(); // Закрываем старое соединение, если было
+            
+            // EventSource автоматически отправляет GET запрос и держит соединение
+            eventSource = new EventSource(FIREBASE_URL);
+
+            // Слушаем событие "put" (Firebase отправляет его при любом изменении данных)
+            eventSource.addEventListener("put", function(e) {
+                const response = JSON.parse(e.data);
+                
+                // При первом подключении path будет "/", а data придет весь объект
+                if (response.path === "/" && response.data) {
+                    localData = response.data.data || [];
+                } 
+                // Если изменилось только поле data (когда мы сохраняем)
+                else if (response.path === "/data" && Array.isArray(response.data)) {
+                    localData = response.data;
+                }
+                
+                // Если мы не в режиме Google Таблиц, обновляем таблицу на экране
+                if (!isGoogleSource) {
+                    updateData();
+                }
+            });
+
+            eventSource.onerror = function(e) {
+                console.error("Ошибка соединения EventSource:", e);
+                // Браузер автоматически попытается переподключиться
+            };
         }
 
         document.getElementById('currentSourceText').textContent = isGoogleSource ? 'Google Таблица' : 'Firebase DB';
@@ -302,8 +328,6 @@
                 else localData[index][field] = parseInt(input.value) || 0;
             });
 
-            updateData();
-
             btn.innerText = "Сохранение...";
             statusEl.classList.remove('hidden', 'text-red-500', 'text-green-500');
             statusEl.classList.add('text-cyan-400');
@@ -311,7 +335,6 @@
 
             try {
                 const payload = { version: Date.now(), data: localData };
-                // Используем PUT запрос для перезаписи узла leaderboard
                 const response = await fetch(FIREBASE_URL, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -323,6 +346,9 @@
                     statusEl.classList.remove('text-cyan-400', 'text-red-500');
                     statusEl.classList.add('text-green-500');
                     statusEl.innerText = "Успешно сохранено!";
+                    // Таблица обновится автоматически благодаря EventSource, 
+                    // но мы все равно вызываем updateData() для мгновенного отклика в админке
+                    updateData();
                     setTimeout(() => statusEl.classList.add('hidden'), 4000);
                 } else {
                     throw new Error('Firebase Save Failed');
